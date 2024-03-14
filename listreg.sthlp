@@ -216,7 +216,7 @@
     (intentional inclusion of text from another source without citation) by
     university students. An excerpt from the data of this study is as follows.
 
-        {com}. {stata "use https://github.com/benjann/listreg/blob/main/listreg.dta, clear"}
+        {com}. {stata "use https://raw.githubusercontent.com/benjann/listreg/main/listreg.dta, clear"}
         . {stata describe}{txt}
 
 {pstd}
