@@ -1,4 +1,4 @@
-*! version 1.0.0  14mar2024  Ben Jann
+*! version 1.0.1  14mar2024  Ben Jann
 
 program listreg, eclass properties(svyb svyj mi)
     version 14
@@ -138,8 +138,8 @@ program Display
         di as txt "Outcome variables:   `space'" as res e(depvar)
     }
     di as txt "Long-list indicator: `space'" as res e(tvar) as txt " (N = " /*
-        */ as res el(e(_N),1,1) as txt " in group 0, N = "/*
-        */ as res el(e(_N),1,2) as txt " in group 1)"
+        */ as res el(e(_N),1,2) as txt " in group 1, N = "/*
+        */ as res el(e(_N),1,1) as txt " in group 0)"
     if !`dl' {
         if `"`e(indepvars)'`e(controls)'"'=="" exit
     }
@@ -255,19 +255,26 @@ program Estimate, eclass
     _nobs `touse' `wgt' if `touse'
     local N = r(N)
     
-    // check long list indicator
-    capt assert inlist(`tvar',0,1) if `touse'
-    if _rc {
-        di as err "{it:tvar} must be in {0,1}"
-        exit 499
-    }
+    // generate long list indicator
+    tempvar T
+    qui gen byte `T' = (`tvar')==1 if `touse'
     tempname _N
     mat `_N' = J(1,2,.)
     mat coln `_N' = 0 1
-    _nobs `touse' `wgt' if `touse' & `tvar'==0
-    mat `_N'[1,1] = r(N)
-    _nobs `touse' `wgt' if `touse' & `tvar'==1
+    capt _nobs `touse' `wgt' if `touse' & `T'==1
+    if _rc==2000 {
+        di as err "no observations in group 1"
+        exit 2000
+    }
+    else if _rc error _rc
     mat `_N'[1,2] = r(N)
+    capt _nobs `touse' `wgt' if `touse' & `T'==0
+    if _rc==2000 {
+        di as err "no observations in group 0"
+        exit 2000
+    }
+    else if _rc error _rc
+    mat `_N'[1,1] = r(N)
     
     // expand factor variables and fill in controls if needed
     fvexpand `varlist' if `touse'
@@ -321,7 +328,7 @@ program Estimate, eclass
         foreach v of local ovar {
             `qui' di _n as txt "- short list `=`i'+1'"
             tempvar rz_`i' invGz_`i'
-            `qui' regress `v' `zvars_`i'' `iwgt' if `tvar'==`i' & `touse',/*
+            `qui' regress `v' `zvars_`i'' `iwgt' if `T'==`i' & `touse',/*
                 */ `zcons_`i''
             if `IF' mat `invGz_`i'' = e(V) / e(rmse)^2
             qui predict double `rz_`i'' if `touse', resid
@@ -329,13 +336,13 @@ program Estimate, eclass
         }
         if `dl'<2 {
             tempvar rz
-            qui gen double `rz' = cond(`tvar'==1, `rz_0', `rz_1') if `touse'
+            qui gen double `rz' = cond(`T'==1, `rz_0', `rz_1') if `touse'
         }
     }
     else {
         `qui' di _n as txt "- short list"
         tempvar rz invGz
-        `qui' regress `ovar' `zvars' `iwgt' if `tvar'==0 & `touse', `zcons'
+        `qui' regress `ovar' `zvars' `iwgt' if `T'==0 & `touse', `zcons'
         if `IF' mat `invGz' = e(V) / e(rmse)^2
         predict double `rz', resid
     }
@@ -347,7 +354,7 @@ program Estimate, eclass
             `qui' di _n as txt "- residualized long list `=`i'+1'"
             tempname r_`i' b_`i' invG_`i'
             `qui' regress `rz_`i'' `xvars' `iwgt'/*
-                */ if `tvar'!=`i' & `touse', `constant'
+                */ if `T'!=`i' & `touse', `constant'
             mat `b_`i'' = e(b)
             if `IF' {
                 mat `invG_`i'' = e(V) / e(rmse)^2
@@ -362,7 +369,7 @@ program Estimate, eclass
         `qui' di _n as txt "- residualized long list"
         tempname r b invG
         if `dl' local iff `touse'
-        else    local iff `tvar'==1 & `touse'
+        else    local iff `T'==1 & `touse'
         `qui' regress `rz' `xvars' `iwgt' if `iff', `constant'
         mat `b' = e(b)
         if `IF' {
@@ -480,7 +487,7 @@ program _parse_ovar
 end
 
 program _parse_tvar
-    syntax varname(numeric)
+    syntax varname(numeric fv)
     c_local tvar `varlist'
 end
 
@@ -569,7 +576,7 @@ void listreg_IF(real scalar dl, string scalar touse)
     st_view(IF=., ., st_local("IFs"), touse)
     if (st_local("wvar")=="") w = 1
     else                      st_view(w=., ., st_local("wvar"), touse)
-    st_view(t=., ., st_local("tvar"), touse)
+    st_view(t=., ., st_local("T"), touse)
     st_view(X=., ., st_local("varlist"), touse)
     c = st_local("constant")==""
     if (dl<2) IF[.,.] =  listreg_IFx("",  dl, w,  t, X, c, touse)

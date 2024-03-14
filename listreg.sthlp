@@ -24,8 +24,8 @@
     {it:ovar} is the outcome variable from the list experiment.
     {p_end}
 {pmore}
-    {it:tvar} is an indicator variable identifying the short-list group
-    ({it:tvar}=0) and the long-list group ({it:tvar}=1)
+    {it:tvar} is a variable identifying the long-list group ({it:tvar}==1) and
+    the short-list group ({it:tvar}!=1).
 
 {pstd}
     Double-list design:
@@ -40,9 +40,9 @@
     {it:ovar1} and {it:ovar2} are the two outcome variables from the double-list experiment.
     {p_end}
 {pmore}
-    {it:tvar} is an indicator variable identifying the short-list group
-    ({it:tvar}=0 for {it:ovar1}, {it:tvar}=1 for {it:ovar2})
-    and the long-list group ({it:tvar}=1 for {it:ovar1}, {it:tvar}=0 for {it:ovar2}).
+    {it:tvar} is a variable identifying the
+    long-list group ({it:tvar}==1 for {it:ovar1}, {it:tvar}!=1 for {it:ovar2})
+    and the short-list group ({it:tvar}!=0 for {it:ovar1}, {it:tvar}==1 for {it:ovar2}).
 
 
 {synoptset 20 tabbed}{...}
@@ -222,21 +222,21 @@
 {pstd}
     The study used a double-list design. Variable {cmd:plagiarism_1} contains
     the response to list 1, {cmd:plagiarism_2} contains the response to
-    list 2. Variable {cmd:longlist_1}=1 indicates that the sensitive item was
-    included in list 1; {cmd:longlist_2}=1 indicates that the sensitive item was
-    included in list 2 (note that {cmd:longlist_1} = 1 - {cmd:longlist_2}).
+    list 2. Variable {cmd:longlist}=1 indicates that the sensitive item was
+    included in list 1; {cmd:longlist}=2 indicates that the sensitive item was
+    included in list 2.
 
 {dlgtab:Single-list estimate}
 
 {pstd}
     The plagiarism prevalence can be estimates from list 1 as follows:
 
-        {com}. {stata listreg plagiarism_1 longlist_1}{txt}
+        {com}. {stata listreg plagiarism_1 longlist}{txt}
 
 {pstd}
     Likewise, the estimate from list 2 is:
 
-        {com}. {stata listreg plagiarism_2 longlist_2}{txt}
+        {com}. {stata listreg plagiarism_2 2.longlist}{txt}
 
 {pstd}
     Both results indicate that about 10 percent of students have ever intentionally
@@ -247,20 +247,20 @@
 {pstd}
     A more efficient estimate can be obtained by a combined analysis of both lists:
 
-        {com}. {stata listreg plagiarism_1 plagiarism_2 = longlist_1}{txt}
+        {com}. {stata listreg plagiarism_1 plagiarism_2 = longlist}{txt}
 
 {pstd}
     The equal sign indicates to {cmd:listreg} that the first two variables
     are both outcome variables. Using wildcard notation, we can omit the equal
     sign (assuming that there are only two matching variables):
 
-        {com}. {stata listreg plagiarism_* longlist_1}{txt}
+        {com}. {stata listreg plagiarism_* longlist}{txt}
 
 {pstd}
     By default, the double-list estimator uses a pooled outcome model; to report
     average coefficients from two separate outcome equations, type:
 
-        {com}. {stata listreg plagiarism_* longlist_1, average}{txt}
+        {com}. {stata listreg plagiarism_* longlist, average}{txt}
 
 {pstd}
     Results are almost identical, which is not surprising since the two experimental
@@ -274,7 +274,7 @@
     plagiarism prevalence we can add a corresponding indicator as an
     independent variable to the model:
 
-        {com}. {stata listreg plagiarism_* longlist_1 i.unaware}{txt}
+        {com}. {stata listreg plagiarism_* longlist i.unaware}{txt}
 
 {pstd}
     Indeed, it seems that plagiarism occurs primarily among students who are
@@ -282,7 +282,7 @@
     higher than for other students. To report the plagiarism levels for both groups
     (rather than the difference), we can type:
 
-        {com}. {stata listreg plagiarism_* longlist_1 ibn.unaware, noconstant}{txt}
+        {com}. {stata listreg plagiarism_* longlist ibn.unaware, noconstant}{txt}
 
 {pstd}
     The prevalence estimate for students who know the regulations is 2 percent;
@@ -293,7 +293,7 @@
     includes further covariates in the short-list equation to improve the fit:
 
 {p 8 12 2}
-{com}. {stata listreg plagiarism_* longlist_1 i.unaware i.female, controls(i.unaware i.female year i.working i.papers)}{txt}
+{com}. {stata listreg plagiarism_* longlist i.unaware i.female, controls(i.unaware i.female year i.working i.papers)}{txt}
 
 {pstd}
     The results of the short-list models are not included in the {cmd:listreg}
@@ -304,17 +304,17 @@
     subsamples. In the current example, the two models are as follows:
 
 {p 8 12 2}
-{com}. {stata regress plagiarism_1 i.unaware i.female year i.working i.papers if longlist_1==0}{txt}
+{com}. {stata regress plagiarism_1 i.unaware i.female year i.working i.papers if longlist!=1}{txt}
     {p_end}
 {p 8 12 2}
-{com}. {stata regress plagiarism_2 i.unaware i.female year i.working i.papers if longlist_2==0}{txt}
+{com}. {stata regress plagiarism_2 i.unaware i.female year i.working i.papers if longlist==1}{txt}
 
 {pstd}
     Note that you can specify two {cmd:controls()} options, if you want
     to use different specifications for the two short-list equations. Example:
 
 {p 8 12 2}
-{com}. {stata listreg plagiarism_* longlist_1 i.unaware, controls(i.unaware i.female i.working i.papers) controls(i.unaware year)}{txt}
+{com}. {stata listreg plagiarism_* longlist i.unaware, controls(i.unaware i.female i.working i.papers) controls(i.unaware year)}{txt}
 
 {dlgtab:Relation to GMM}
 
@@ -323,12 +323,12 @@
     for the single-list design:
 
         {com}local Y plagiarism_1
-        local T longlist_1
+        local T longlist
         local X i.unaware i.female
         local Z `X' year i.working i.papers
-        gmm (eq0: (1-`T') * (`Y' - {xb0:`Z' _cons})) ///
-            (eq1:     `T' * (`Y' - {xb0:} - {xb1:`X' _cons})) ///
-            , instruments(eq0:`Z') instruments(eq1:`X') winitial(identity)
+        gmm (1: (`T'!=1)*(`Y' - {xb0:`Z' _cons})) ///
+            (2: (`T'==1)*(`Y' - {xb0:} - {xb1:`X' _cons})) ///
+            , instruments(1:`Z') instruments(2:`X') winitial(identity)
         listreg `Y' `T' `X', controls(`Z') nodf{txt}
 
 {pstd}
@@ -336,13 +336,13 @@
 
         {com}local Y1 plagiarism_1
         local Y2 plagiarism_2
-        local T  longlist_1
+        local T  longlist
         local X  i.unaware
         local Z1 `X' i.female i.working i.papers
         local Z2 `X' year
-        gmm (1: (1-`T') * (`Y1' - {xb0:`Z1' _cons})) ///
-            (2:    `T'  * (`Y2' - {xb1:`Z2' _cons})) ///
-            (3: `T'*(`Y1' - {xb0:}) + (1-`T')*(`Y2' - {xb1:}) - {xb2:`X' _cons}) ///
+        gmm (1: (`T'!=1)*(`Y1' - {xb0:`Z1' _cons})) ///
+            (2: (`T'==1)*(`Y2' - {xb1:`Z2' _cons})) ///
+            (3: (`T'==1)*(`Y1' - {xb0:}) + (`T'!=1)*(`Y2' - {xb1:}) - {xb2:`X' _cons}) ///
             , instruments(1:`Z1') instruments(2:`Z2') instruments(3:`X') ///
               winitial(identity)
         listreg `Y1' `Y2' = `T' `X', controls(`Z1') controls(`Z2') nodf{txt}
@@ -363,7 +363,7 @@
     a vector of predictors (including constant), and Z be a vector of controls. The
     estimation procedure for the single-list design then is as follows:
 
-{phang2}1. Regress Y on Z in the subsample for which T = 0.{p_end}
+{phang2}1. Regress Y on Z in the subsample for which T != 1.{p_end}
 {phang2}2. Predict residuals R from this model in the subsample for which T = 1.{p_end}
 {phang2}3. Regress R on X in the subsample for which T = 1 and report the coefficients.{p_end}
 
@@ -372,17 +372,17 @@
     Y2 be the outcome from list 2, Z1 be the controls for list 1, and
     Z2 be the controls for list 2. The default procedure then is as follows:
 
-{phang2}1. Regress Y1 on Z1 in the subsample for which T = 0.{p_end}
+{phang2}1. Regress Y1 on Z1 in the subsample for which T != 1.{p_end}
 {phang2}2. Regress Y2 on Z2 in the subsample for which T = 1.{p_end}
 {phang2}3. Predict residuals R from first model in the subsample for which T = 1
-    and from the second model in the subsample for which T = 0.{p_end}
+    and from the second model in the subsample for which T != 1.{p_end}
 {phang2}4. Regress R on X and report the coefficients.{p_end}
 
 {pstd}
     If option {cmd:average} is specified, step 4 is replaced by:
 
 {phang2}4. Regress R on X subsample for which T = 1.{p_end}
-{phang2}5. Regress R on X subsample for which T = 0.{p_end}
+{phang2}5. Regress R on X subsample for which T != 1.{p_end}
 {phang2}6. Report the average of the coefficients from steps 4 and 5.{p_end}
 
 {pstd}

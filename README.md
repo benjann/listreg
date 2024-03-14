@@ -18,5 +18,8 @@ Stata version 14 or newer is required.
 
 Main changes:
 
+    14mar2024 (version 1.0.1)
+    - some changes to handling of tvar
+
     14mar2024 (version 1.0.0)
     - released on GitHub
