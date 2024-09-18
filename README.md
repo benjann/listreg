@@ -22,6 +22,9 @@ Installation from GitHub:
 
 Main changes:
 
+    18sep2024
+    - help file now includes additional examples (consistency tests)
+
     23mar2024 (version 1.0.2)
     - in the double-list design the default now is to use all available observations
       for each list and not restrict the analysis to the common sample; specify
