@@ -22,6 +22,10 @@ Installation from GitHub:
 
 Main changes:
 
+    26apr2025 (version 1.0.3)
+    - option -nodfr- renamed to -normal-; -nodfr- still supported (undocumented)
+    - sum of weights is now returned in e(sum_w)
+
     18sep2024
     - help file now includes additional examples (consistency tests)
 

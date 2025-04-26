@@ -3,8 +3,8 @@ d listreg: Stata module for the analysis of list experiments using linear regres
 d 
 d Author: Ben Jann, University of Bern, ben.jann@unibe.ch
 d
-d Distribution-Date: 20240918
-f listreg.sthlp
+d Distribution-Date: 20250426
+f _listreg_svy.ado
 f listreg.ado
 f listreg.dta
-f _listreg_svy.ado
+f listreg.sthlp
