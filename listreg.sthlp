@@ -472,6 +472,23 @@
     indicate that the treatment effect is less pronounced in case of a
     first baby.
 
+{pstd}
+    Furthermore, note that the double-list estimator can be used to recover the
+    average treatment effect (ATE). The trick is to use reversed outcomes in
+    {it:ovar2}. Example:
+
+{p 8 12 2}
+        . {stata teffects ra (bweight prenatal1 mmarried mage fbaby) (mbsmoke)}
+    {p_end}
+{p 8 12 2}
+        . {stata generate rbw = -bweight}
+    {p_end}
+{p 8 12 2}
+        . {stata listreg bweight rbw = mbsmoke, controls(prenatal1 mmarried mage fbaby) normal}
+    {p_end}
+{p 8 12 2}
+        . {stata listreg bweight rbw = mbsmoke prenatal1 fbaby, controls(prenatal1 mmarried mage fbaby) normal}{txt}
+
 
 {title:Returned results}
 
